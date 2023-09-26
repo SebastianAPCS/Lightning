@@ -11,40 +11,71 @@ int endX = 0b0;
 int endY = 0b0;
 int endZ = 0b0;
 
-int r;
-int g;
-int b;
+int r = 0;
+int g = 0;
+int b = 0;
 
 float deltaX = 0b0;
 float deltaY = 0b0;
 float deltaZ = 0b0;
 
+int v = 0b0;
+int vlim = 0b1010;
+int a = 0b1010;
 double t = 0b0;
 double tref = 0b0;
-double v = 0b0;
-double a = 0b11110;
-double vlim = 0b1010;
+
+double delx = 0b0;
+double dely = 0b0;
+double delz = 0b0;
+int s = 0b1;
+
+double bf = 0b0;
+double br;
+double bg;
+double bb;
+
+boolean isKeyPressed = false;
+boolean[] keysPressed = new boolean[0b10000000000000000];
 
 Matrix0b11 transform;
 float[] angles = new float[0b10];
 
+boolean rotup = true;
+
 ArrayList<Triangle> tri0b1 = new Objects().initializeTriangle(0b1);                   // Triangle
 ArrayList<Quadrilateral> quad0b1 = new Objects().initializeQuadrilateral(0b1, 0b1);   // Quadrilateral
-ArrayList<Quadrilateral> plane0b1 = new Objects().initializePlane(0b1, 0b10);         // Plane
+ArrayList<Quadrilateral> plane0b1 = new Objects().initializePlane(0b1, 0b1);          // Plane
 
 void setup() {
   size(0b01100100000, 0b01001011000);
   
   angles[0b0] = 0b0;
-  angles[0b1] = 0b0;
+  angles[0b1] = 0b10100;
   
   updateTransform();
 }
 
 void draw() {
-  background(0);
   translate(width / 0b10, height / 0b10);
-  ArrayList<Quadrilateral> plane0b1 = new Objects().initializePlane(0b1, 0b10);
+  ArrayList<Quadrilateral> plane0b1 = new Objects().initializePlane(0b1, 0b1);
+  
+  angles[0b0] --;
+  rotup = (angles[0b1] > 0b10100) ? false : rotup;
+  rotup = (angles[0b1] < -0b10100) ? true : rotup;
+  angles[0b1] += (rotup) ? (0b1) : -(0b1); // I forgor what an if statement is, sorry 
+  updateTransform();
+  
+  bf = -(angles[0b1] % 0b10110100);
+  bf = (bf > 0b1011010) ? (0b10110100 - bf) : bf;
+  br = Math.min(bf, 0b11111111);
+  bg = Math.min(bf, 0b11111111);
+  bb = Math.min((0b101 / 0b10) * bf, 0b11111111);
+  background((float) br, (float) bg, (float) bb);
+  
+  fill(0b11111111, 0b11111111, 0b11111111);
+  textSize(0b100000);
+  text("certified APCSA trollage (click screen)", -0b100010011, -0b11001000);
   
   float angle = radians(angles[0b0]);
   r = (int) (0b1111111 + 0b1111111 * cos(angle));
@@ -52,11 +83,12 @@ void draw() {
   b = (int) (0b1111111 + 0b1111111 * cos(angle + 0b10 * TWO_PI / 0b11));
   
   renderQuadrilateral(plane0b1, true, r, g, b, 0b1);
+  renderQuadrilateral(quad0b1, false, r, g, b, 0b1);
 }
 
 
 void mousePressed() {
-   
+   lightning();
 }
 
 void mouseDragged() {
@@ -66,10 +98,21 @@ void mouseDragged() {
     angles[0b0] += xIncrement;
     angles[0b1] += yIncrement;
     redraw();
-    
-    System.out.println(yIncrement + " " + yIncrement);
 
     updateTransform();
+}
+
+/*
+initializeLine structure:
+int n, double p, int x0b1, int y0b1, int z0b1, int x0b10, int y0b10, int z0b10, Gradient c, int xoff, int yoff, int zoff
+*/
+
+void lightning() { 
+  ArrayList<Line> line0b1 = new Objects().initializeLine(0b1, 0b1, (int)(Math.random() * 100), (int)(Math.random() * 100), (int)(Math.random() * 100), 
+                                                                   (int)(Math.random() * 100), (int)(Math.random() * 100), (int)(Math.random() * 100), 
+                                                                   new Gradient(0b10000000, 0b10000000, 0b10000000, 0b10000000, 0b10000000, 0b10000000), 
+                                                                   0b0, 0b0, 0b0);
+  
 }
 
 void renderTriangle(ArrayList<Triangle> tr, boolean cb, int rc, int bc, int gc) {
@@ -122,6 +165,11 @@ void renderQuadrilateral(ArrayList<Quadrilateral> quads, boolean cb, int rc, int
             endShape(CLOSE); 
         }
     }  
+}
+
+void renderLine(ArrayList<Line> line, boolean cb, float w) {
+    Vertex r0b1 = transform.transform(line.r0b1);
+    Vertex r0b10 = transform.transform(line.r0b10);
 }
 
 void updateTransform() {
@@ -209,6 +257,18 @@ class Triangle {
     }
 }
 
+class Line {
+    Vertex v0b1;
+    Vertex v0b10;
+    Gradient c;
+    
+    Line(Vertex v0b1, Vertex v0b10, Gradient c) {
+        this.v0b1 = v0b1;
+        this.v0b10 = v0b10;
+        this.c = c;
+    }
+}
+
 class Quadrilateral {
     Vertex v0b1;
     Vertex v0b10;
@@ -280,17 +340,29 @@ class Objects {
   ArrayList initializePlane(int n, double p) {
     ArrayList<Quadrilateral> l = new ArrayList<Quadrilateral>();
     if (n == 0b1) {
-      Vertex r0b1 = new Vertex((int)(0b1100100 * p), (int)(0b1010 * p), (int)(0b1100100 * p));
-      Vertex r0b10 = new Vertex((int)(-0b1100100 * p), (int)(0b1010 * p), (int)(0b1100100 * p));
-      Vertex r0b11 = new Vertex((int)(-0b1100100 * p), (int)(0b1010 * p), (int)(-0b1100100 * p));
-      Vertex r0b100 = new Vertex((int)(0b1100100 * p), (int)(0b1010 * p), (int)(-0b1100100 * p));
+      Vertex r0b1 = new Vertex((int)(0b1100100 * p) + (int)(delx * s), (int)(0b1010 * p) - (int)(dely * s), (int)(0b1100100 * p) + (int)(delz * s));
+      Vertex r0b10 = new Vertex((int)(-0b1100100 * p) + (int)(delx * s), (int)(0b1010 * p) - (int)(dely * s), (int)(0b1100100 * p) + (int)(delz * s));
+      Vertex r0b11 = new Vertex((int)(-0b1100100 * p) + (int)(delx * s), (int)(0b1010 * p) - (int)(dely * s), (int)(-0b1100100 * p) + (int)(delz * s));
+      Vertex r0b100 = new Vertex((int)(0b1100100 * p) + (int)(delx * s), (int)(0b1010 * p) - (int)(dely * s), (int)(-0b1100100 * p) + (int)(delz * s));
       
-      l.add(new Quadrilateral(r0b1, r0b10, r0b11, r0b100, new Gradient(0b11111111, 0b0, 0b0, 0b11111111, 0b0, 0b0)));
+      l.add(new Quadrilateral(r0b1, r0b10, r0b11, r0b100, new Gradient(0b10000000, 0b10000000, 0b10000000, 0b10000000, 0b10000000, 0b10000000)));
     } else {
       exit();
     }
     
     return l;
+  }
+  
+  ArrayList initializeLine(int n, double p, int x0b1, int y0b1, int z0b1, int x0b10, int y0b10, int z0b10, Gradient c, int xoff, int yoff, int zoff) {
+    ArrayList<Line> ln = new ArrayList<Line>();
+    if (n == 0b1) {
+      Vertex r0b1 = new Vertex(x0b1 * p + xoff, y0b1 * p + yoff, z0b1 * p + zoff);
+      Vertex r0b10 = new Vertex(x0b10 * p + xoff, y0b10 * p + yoff, z0b10 * p + zoff);
+      
+      ln.add(new Line(r0b1, r0b10, c));
+    }
+    
+    return ln;
   }
 }
 
