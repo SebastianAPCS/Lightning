@@ -5,47 +5,45 @@
 */
 
 int startX = 0b0;
-int startY = 0b0;
+int startY = -0b111110100;
 int startZ = 0b0;
-int endX = 0b0;
-int endY = 0b0;
-int endZ = 0b0;
+int endY = 0b1000011;
 
-int r = 0;
-int g = 0;
-int b = 0;
+int r = 0b0;
+int g = 0b0;
+int b = 0b0;
 
 float deltaX = 0b0;
 float deltaY = 0b0;
 float deltaZ = 0b0;
 
-int v = 0b0;
-int vlim = 0b1010;
-int a = 0b1010;
 double t = 0b0;
 double tref = 0b0;
 
 double delx = 0b0;
 double dely = 0b0;
 double delz = 0b0;
-int s = 0b1;
+double s = 0b1;
 
 double bf = 0b0;
 double br;
 double bg;
 double bb;
 
-boolean isKeyPressed = false;
-boolean[] keysPressed = new boolean[0b10000000000000000];
+int refr;
+int refg;
+int refb;
 
 Matrix0b11 transform;
 float[] angles = new float[0b10];
 
-boolean rotup = true;
+boolean lightning = false;
 
-ArrayList<Triangle> tri0b1 = new Objects().initializeTriangle(0b1);                   // Triangle
-ArrayList<Quadrilateral> quad0b1 = new Objects().initializeQuadrilateral(0b1, 0b1);   // Quadrilateral
-ArrayList<Quadrilateral> plane0b1 = new Objects().initializePlane(0b1, 0b1);          // Plane
+ArrayList<ArrayList<ArrayList<Line>>> allStrikes = new ArrayList<>();
+
+ArrayList<Triangle> tri0b1 = new Objects().initializeTriangle(0b1);                   
+ArrayList<Quadrilateral> quad0b1 = new Objects().initializeQuadrilateral(0b1, 0b1);   
+ArrayList<Quadrilateral> plane0b1 = new Objects().initializePlane(0b1, 0b1);          
 
 void setup() {
   size(0b01100100000, 0b01001011000);
@@ -61,9 +59,6 @@ void draw() {
   ArrayList<Quadrilateral> plane0b1 = new Objects().initializePlane(0b1, 0b1);
   
   angles[0b0] --;
-  rotup = (angles[0b1] > 0b10100) ? false : rotup;
-  rotup = (angles[0b1] < -0b10100) ? true : rotup;
-  angles[0b1] += (rotup) ? (0b1) : -(0b1); // I forgor what an if statement is, sorry 
   updateTransform();
   
   bf = -(angles[0b1] % 0b10110100);
@@ -71,48 +66,82 @@ void draw() {
   br = Math.min(bf, 0b11111111);
   bg = Math.min(bf, 0b11111111);
   bb = Math.min((0b101 / 0b10) * bf, 0b11111111);
-  background((float) br, (float) bg, (float) bb);
+  t = millis();
   
-  fill(0b11111111, 0b11111111, 0b11111111);
+  if ((tref != 0b0) && ((t - tref) < 0b1100100) && (angles[1] > 0b0)) {
+    background(sin(angles[1] * (((float) 0b111101010111000 / (float) 0b10011100010000) / 0b10110100)) * 0b1010000, 
+               sin(angles[1] * (((float) 0b111101010111000 / (float) 0b10011100010000) / 0b10110100)) * 0b1010000, 
+               sin(angles[1] * (((float) 0b111101010111000 / (float) 0b10011100010000) / 0b10110100)) * 0b10100);
+  } else {
+    background((float) br, (float) bg, (float) bb);
+  }
+  
+  fill(0b11111111, 0b11111111, 0b0);
   textSize(0b100000);
-  text("certified APCSA trollage (click screen)", -0b100010011, -0b11001000);
+  text("certified APCSA trollage (click screen)", -0b11111010, -0b11001000);
   
   float angle = radians(angles[0b0]);
   r = (int) (0b1111111 + 0b1111111 * cos(angle));
-  g = (int) (0b1111111 + 0b1111111 * cos(angle + TWO_PI / 0b11));
-  b = (int) (0b1111111 + 0b1111111 * cos(angle + 0b10 * TWO_PI / 0b11));
+  g = (int) (0b1111111 + 0b1111111 * cos(angle + (0b10 * ((float) 0b111101010111000 / (float) 0b10011100010000)) / 0b11));
+  b = (int) (0b1111111 + 0b1111111 * cos(angle + 0b10 * (0b10 * ((float) 0b111101010111000 / (float) 0b10011100010000)) / 0b11));
   
   renderQuadrilateral(plane0b1, true, r, g, b, 0b1);
   renderQuadrilateral(quad0b1, false, r, g, b, 0b1);
+  
+  if (lightning) {
+    tref = millis();
+    System.out.println(tref);
+    for (ArrayList<ArrayList<Line>> strike : allStrikes) {
+      for (ArrayList<Line> line : strike) {
+        renderLine(line, 0b11111111, 0b11111111, 0b0, 0b10);
+      }
+    }
+    
+    allStrikes.clear();
+    lightning = false;
+  }
 }
 
 
 void mousePressed() {
    lightning();
+   lightning = true;
 }
 
 void mouseDragged() {
     float sensitivity = ((float) 0b100001) / ((float) 0b1100100);
     float yIncrement = sensitivity * (pmouseY - mouseY);
-    float xIncrement = sensitivity * (mouseX - pmouseX);
-    angles[0b0] += xIncrement;
     angles[0b1] += yIncrement;
     redraw();
 
     updateTransform();
 }
 
-/*
-initializeLine structure:
-int n, double p, int x0b1, int y0b1, int z0b1, int x0b10, int y0b10, int z0b10, Gradient c, int xoff, int yoff, int zoff
-*/
-
-void lightning() { 
-  ArrayList<Line> line0b1 = new Objects().initializeLine(0b1, 0b1, (int)(Math.random() * 100), (int)(Math.random() * 100), (int)(Math.random() * 100), 
-                                                                   (int)(Math.random() * 100), (int)(Math.random() * 100), (int)(Math.random() * 100), 
-                                                                   new Gradient(0b10000000, 0b10000000, 0b10000000, 0b10000000, 0b10000000, 0b10000000), 
-                                                                   0b0, 0b0, 0b0);
-  
+void lightning() {
+  for (int j = 0b0; j < (int)(Math.random() * 0b11) + 0b1; j++) {
+    ArrayList<ArrayList<Line>> lineLists = new ArrayList<>();
+    
+    int yo0b1 = 0b0;
+    int yo0b10 = (Math.abs(endY - startY)) / 0b1010;
+    int lx = (int)(Math.random() * 0b11110) - 0b1111;
+    int lz = (int)(Math.random() * 0b11110) - 0b1111;
+    int lx0b10 = 0b0;
+    int lz0b10 = 0b0;
+    
+    for (int i = 0b1; i < 0b1010; i++) { 
+      ArrayList<Line> currentLine = new Objects().initializeLine(0b1, 0b10, startX + lx0b10, startY + yo0b1, startZ + lz0b10, startX + lx, startY + yo0b10, startZ + lz,  0b0, 0b0, 0b0);                                                             
+      lineLists.add(currentLine);
+      
+      yo0b1 += (Math.abs(endY - startY)) / 0b1010;
+      yo0b10 += (Math.abs(endY - startY)) / 0b1010;
+      lx0b10 = lx;
+      lz0b10 = lz;
+      lx = (int)(Math.random() * 0b11110) - 0b1111;
+      lz = (int)(Math.random() * 0b11110) - 0b1111;
+    }
+    
+    allStrikes.add(lineLists);
+  }
 }
 
 void renderTriangle(ArrayList<Triangle> tr, boolean cb, int rc, int bc, int gc) {
@@ -167,9 +196,16 @@ void renderQuadrilateral(ArrayList<Quadrilateral> quads, boolean cb, int rc, int
     }  
 }
 
-void renderLine(ArrayList<Line> line, boolean cb, float w) {
-    Vertex r0b1 = transform.transform(line.r0b1);
-    Vertex r0b10 = transform.transform(line.r0b10);
+void renderLine(ArrayList<Line> line, int rc, int bc, int gc, float w) {
+    for (Line l : line) {
+        Vertex v0b1 = transform.transform(l.v0b1);
+        Vertex v0b10 = transform.transform(l.v0b10);
+        
+        stroke(rc, bc, gc);
+        strokeWeight(w);
+        
+        line((float) v0b1.x, (float) v0b1.y, (float) v0b10.x, (float) v0b10.y);
+    }
 }
 
 void updateTransform() {
@@ -260,12 +296,10 @@ class Triangle {
 class Line {
     Vertex v0b1;
     Vertex v0b10;
-    Gradient c;
     
-    Line(Vertex v0b1, Vertex v0b10, Gradient c) {
+    Line(Vertex v0b1, Vertex v0b10) {
         this.v0b1 = v0b1;
         this.v0b10 = v0b10;
-        this.c = c;
     }
 }
 
@@ -353,13 +387,13 @@ class Objects {
     return l;
   }
   
-  ArrayList initializeLine(int n, double p, int x0b1, int y0b1, int z0b1, int x0b10, int y0b10, int z0b10, Gradient c, int xoff, int yoff, int zoff) {
+  ArrayList initializeLine(int n, double p, int x0b1, int y0b1, int z0b1, int x0b10, int y0b10, int z0b10, int xoff, int yoff, int zoff) {
     ArrayList<Line> ln = new ArrayList<Line>();
     if (n == 0b1) {
       Vertex r0b1 = new Vertex(x0b1 * p + xoff, y0b1 * p + yoff, z0b1 * p + zoff);
       Vertex r0b10 = new Vertex(x0b10 * p + xoff, y0b10 * p + yoff, z0b10 * p + zoff);
       
-      ln.add(new Line(r0b1, r0b10, c));
+      ln.add(new Line(r0b1, r0b10));
     }
     
     return ln;
